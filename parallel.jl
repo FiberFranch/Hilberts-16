@@ -8,7 +8,7 @@ function odefcn(x,y)
     d=-72-7/9;
     e=0.0015;
     
-    return   x^2 +   x*y +                 y,
+    return    x^2 +   x*y +                 y,
             a*x^2 + b*x*y + c*y^2 + d*x + e*y
 end
 
