@@ -50,6 +50,7 @@ function RK4(x0, y0, h)
         
     end
     
+    #Example: find crossing with inverse quadratic interpolation
     xdiff = x0 - (xm2 * (ym1 * y  )   / ((ym2 - ym1) * (ym2 - y  )) +
                 + xm1 * (ym2 * y  )   / ((ym1 - ym2) * (ym1 - y  )) +
                 + x   * (ym2 * ym1)   / ((y   - ym2) * (y   - ym1)));
@@ -99,7 +100,7 @@ function sequential_RK4!(points, xdiff, h)
     return nothing
 end
 
-h_s = 0.000001;
+h_s = 0.001;
 points_s = Float32.(Array(0.5:0.001:20));
 xdiff_s = Float32.(zeros(length(points_s)));
 
