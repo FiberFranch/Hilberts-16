@@ -10,4 +10,4 @@ test_dich.mlx: Precision benchmark for dichotomic scheme.
 
 kuz.mlx: Replica of Kuznetzov et al's results.
 
-kuz3.mlx: Own implementation of RK4 and Poincaré mapping for limit cycles.
+kuz3.mlx: Poincaré mapping for limit cycles using ode45.
