@@ -1,2 +1,10 @@
 # Hilberts-16
-Check parallel implementation on parallel.jl file.
+
+parallel.jl: Parallel kernel of RK4 solver
+
+test_lin.mlx: Precision benchmark for linear interpolation.
+test_quad.mlx: Precision benchmark for quadratic interpolation.
+test_dich.mlx: Precision benchmark for dichotomic scheme.
+
+kuz.mlx: Replica of Kuznetzov's results.
+kuz2.mlx: Own implementation of RK4 and Poincaré mapping for limit cycles.
