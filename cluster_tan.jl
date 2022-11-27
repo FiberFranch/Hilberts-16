@@ -91,7 +91,7 @@ function compute_arrays!(a, b, c, d, e, RK_precision, search_start, search_end, 
 
 end
 
-function compute_arrays_tan!(a, b, c, d, e, RK_precision, atan_step, factor, iter_max)
+function compute_arrays_tan!(a, b, c, d, e, RK_precision, atan_step, iter_max)
 
     #z = Array(-pi/2 + atan_step : atan_step : pi/2 - atan_step);
     z = Array(-pi/2 : atan_step : pi/2 );
@@ -105,7 +105,7 @@ function compute_arrays_tan!(a, b, c, d, e, RK_precision, atan_step, factor, ite
     z = z[2:lastindex(z)-1];
 
     #points = broadcast(atan, z);
-    points = factor.*tan.(z)
+    points = tan.(z)
 
     points = CuArray{Float32}(filter(!iszero, points));
 
@@ -194,7 +194,7 @@ function find_limit_cycles(a, b, c, d, e, h, iter_max, points, xdiff, iter)
     deleteat!(iterations, drop_indices);
     deleteat!(p_diff, drop_indices);
     
-    drop_indices = findall(x->x<=1e-3, abs.(values))
+    drop_indices = findall(x->x<=1e-5, abs.(values))
     deleteat!(values, drop_indices);
     deleteat!(iterations, drop_indices);
     deleteat!(p_diff, drop_indices);
@@ -215,212 +215,38 @@ iter_max_d = 1000000;
 #end_d = -3000;
 #step_d = 0.1;
 
-points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.01, 1, iter_max_d)
 
-values, iterations, pdiff = find_limit_cycles(a, b, c, d, e, h_d, iter_max_d, points_t, xdiff_t, iter_t)
-
-
-
-#=
 points_x, xdiff_x, iter_x = compute_arrays!(a, b, c, d, e, h_d, 6900, 7100, 1, iter_max_d)
 
 plot(points_x, xdiff_x, legend = false)
 
+
+@btime points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.1, iter_max_d);
+points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.1, iter_max_d);
+length(points_t)
+points_t[1]
+points_t[lastindex(points_t)]
+
+@btime points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.01, iter_max_d);
+points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.01, iter_max_d);
+length(points_t)
+points_t[1]
+points_t[lastindex(points_t)]
+
+@btime points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.001, iter_max_d);
+points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.001, iter_max_d);
+length(points_t)
+points_t[1]
+points_t[lastindex(points_t)]
+
+@btime points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.0001, iter_max_d);
+points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.0001, iter_max_d);
+length(points_t)
+points_t[1]
+points_t[lastindex(points_t)]
 
 @btime points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.00001, iter_max_d);
 points_t, xdiff_t, iter_t = compute_arrays_tan!(a, b, c, d, e, h_d, 0.00001, iter_max_d);
 length(points_t)
 points_t[1]
 points_t[lastindex(points_t)]
-
-values, iterations, pdiff = find_limit_cycles(a, b, c, d, e, h_d, iter_max_d, points_t, xdiff_t, iter_t);
-
-for i in 1:lastindex(values)
-    print(values[i], "\t", pdiff[i], "\n")
-end
-
-valuesp, iterationsp, indicesp = find_possible_cycles(points_t, xdiff_t, iter_t)
-
-for i in 1:lastindex(valuesp)
-    print(valuesp[i], "\t", xdiff_t[indicesp[i]], "\n")
-end
-
-plot(points_t, xdiff_t, xlim=(-0.66,-0.64), ylim=(-0.01,0.01))
-=#
-
-
-
-function RK4_compute(a, b, c, d, e, x0, y0, h, iters)
-
-    x = Array{Float64,1}(undef, iters+3)
-    y = Array{Float64,1}(undef, iters+3)
-    
-    x[1] = x0;
-    y[1] = y0;
-    
-    k1x, k1y = odefcn(a, b, c, d, e, x[1], y[1]);
-    k2x, k2y = odefcn(a, b, c, d, e, x[1] + k1x * h/2, y[1] + k1y * h/2);
-    k3x, k3y = odefcn(a, b, c, d, e, x[1] + k2x * h/2, y[1] + k2y * h/2);
-    k4x, k4y = odefcn(a, b, c, d, e, x[1] + k3x * h  , y[1] + k3y * h  );
-    
-    x[2] = x[1] + (h/6) * (k1x + 2*k2x + 2*k3x + k4x);
-    y[2] = y[1] + (h/6) * (k1y + 2*k2y + 2*k3y + k4y);
-    
-    for i in 3:iters+3
-        
-        k1x, k1y = odefcn(a, b, c, d, e, x[i-1], y[i-1]);
-        k2x, k2y = odefcn(a, b, c, d, e, x[i-1] + k1x * h/2, y[i-1] + k1y * h/2);
-        k3x, k3y = odefcn(a, b, c, d, e, x[i-1] + k2x * h/2, y[i-1] + k2y * h/2);
-        k4x, k4y = odefcn(a, b, c, d, e, x[i-1] + k3x * h  , y[i-1] + k3y * h  );
-
-        x[i] = x[i-1] + (h/6) * (k1x + 2*k2x + 2*k3x + k4x);
-        y[i] = y[i-1] + (h/6) * (k1y + 2*k2y + 2*k3y + k4y);
-
-    end
-    x = x[[1:10:iters;]]
-    y = y[[1:10:iters;]]
-    
-    return x, y
-    
-end
-
-#=
-if length(values) > 0
-    vecx, vecy = RK4_compute(a, b, c, d, e, values[1], 0.0, h_d, iterations[1]);
-    plt = plot(vecx, vecy);
-    for i in 2:lastindex(values)
-        vecx, vecy = RK4_compute(a, b, c, d, e, values[i], 0.0, h_d, iterations[i]);
-        plot!(plt,vecx, vecy);
-    end
-    plt
-end
-=#
-
-#=
-function calculate_area(x,y)
-    heights = (abs.(y[1:lastindex(y)-1]) .+ abs.(y[2:lastindex(y)]))./2;
-    widths = x[2:lastindex(y)] .- x[1:lastindex(y)-1];
-    return sum(heights .* widths)
-end
-
-calculate_area([0,10,20], [10,10,10])
-
-broadcast(atan,Array(1:1:10))
-atan(pi/2)
-tan(pi/2)
-=#
-
-function RK4_crossing(a, b, c, d, e, x0, y0, h, iter_max)
-    
-    xm2 = x0;
-    ym2 = y0;
-    xm1 = x0;
-    ym1 = y0;
-    
-    k1x, k1y = odefcn(a, b, c, d, e, xm1, ym1);
-    k2x, k2y = odefcn(a, b, c, d, e, xm1 + k1x * h/2, ym1 + k1y * h/2);
-    k3x, k3y = odefcn(a, b, c, d, e, xm1 + k2x * h/2, ym1 + k2y * h/2);
-    k4x, k4y = odefcn(a, b, c, d, e, xm1 + k3x * h  , ym1 + k3y * h  );
-    
-    x = xm1 + (h/6) * (k1x + 2*k2x + 2*k3x + k4x);
-    y = ym1 + (h/6) * (k1y + 2*k2y + 2*k3y + k4y);
-    
-    count = 0;
-    iter = 1;
-    
-    while count < 1 && iter < iter_max
-        
-        xm2 = xm1;
-        ym2 = ym1;
-        xm1 = x;
-        ym1 = y;
-        
-        k1x, k1y = odefcn(a, b, c, d, e, xm1, ym1);
-        k2x, k2y = odefcn(a, b, c, d, e, xm1 + k1x * h/2, ym1 + k1y * h/2);
-        k3x, k3y = odefcn(a, b, c, d, e, xm1 + k2x * h/2, ym1 + k2y * h/2);
-        k4x, k4y = odefcn(a, b, c, d, e, xm1 + k3x * h  , ym1 + k3y * h  );
-
-        x = xm1 + (h/6) * (k1x + 2*k2x + 2*k3x + k4x);
-        y = ym1 + (h/6) * (k1y + 2*k2y + 2*k3y + k4y);
-        
-        if y*ym1 < 0
-            count = count + 1;
-        end
-        
-    end
-    
-    return x
-    
-end
-
-function pair_up(a, b, c, d, e, values, y0, h, iter_max)
-
-    hoops = Array{Array{Float64},1}(undef, lastindex(values))
-
-    for i in 1:lastindex(values)
-        crossing  = RK4_crossing(a, b, c, d, e, values[i], y0, h, iter_max)
-        hoops[i] = [values[i],crossing]
-    end
-    
-    return hoops
-end
-
-
-#=
-scatter(points_t[10:30],xdiff_t[10:30], xlim=(-4000,-3500), legend = false)
-plot!(points_x,xdiff_x,)
-=#
-
-
-hoops = pair_up(a, b, c, d, e, values, 0, h_d, iter_max_d)
-
-for i in 1:lastindex(values)
-    print(values[i],"\t",hoops[i],"\t", pdiff[i],"\n")
-end
-
-
-
-
-function define_cycles(values, hoops)
-
-    opposite = zeros(lastindex(values));
-
-    for i in 1:lastindex(opposites)
-        opposite[i] = hoops[i][2];
-    end
-
-
-    pair = zeros(Int,lastindex(values));
-
-    for i in 1:lastindex(values)
-        pair[i] = argmin(abs.(opposite.-values[i]));
-    end
-
-
-    final_cycles = []
-    remaining = collect(1:1:lastindex(values));
-    i = 1;
-
-    while length(remaining) > 0
-        if i == pair[pair[i]]
-            push!(final_cycles, [Float32(values[i]), Float32(values[pair[i]])]);
-
-            drop_indices = findall(x->x==i, remaining);
-            deleteat!(remaining, drop_indices);
-
-            drop_indices = findall(x->x==pair[i], remaining);
-            deleteat!(remaining, drop_indices);
-        else
-            push!(final_cycles, [Float32(hoops[i][1]), Float32(hoops[i][2])]);
-
-            drop_indices = findall(x->x==i, remaining);
-            deleteat!(remaining, drop_indices);
-        end
-        i = i + 1;
-    end
-
-    return final_cycles
-
-end
-
-final = define_cycles(values, hoops)
